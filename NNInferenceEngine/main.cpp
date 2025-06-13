@@ -8,6 +8,9 @@
 #include <iostream>
 #include "Matrix.hpp"
 #include <chrono>
+#include <arm_neon.h>  //including neon intrinsic architechture
+#include <numeric>
+#include "VectorOps.h"
 
 
 int main(){
@@ -107,7 +110,87 @@ int main(){
             }
         }
     std::cout << "Max difference between manual and Accelerate results: " << max_diff << std::endl;
-
+    
+    //SIMD Fundamentals - NEON Experiment
+    float a_arr[4]  = {1.0f, 2.0f, 3.0f, 4.0f};
+    float b_arr[4] = {5.0f, 6.0f, 7.0f, 8.0f};
+    float result_arr[4];
+    
+    //1. Loading data from memory into NEON registers(foat32x4_t)
+    // vld1q_32 loads 4 floats into a 128 bit register
+    float32x4_t vec_a = vld1q_f32(a_arr);
+    float32x4_t vec_b = vld1q_f32(b_arr);
+    
+    //2. performing elementwise addition using NEON intrinsic
+    // vaddq_f32 add corresponding elements of two 128-bit float vecotrs
+    float32x4_t vec_result = vaddq_f32(vec_a, vec_b);
+    
+    //3. storing the result back to memory from NEON registers
+    // vst1q_f32 stores the 4 floats from the 128-bit registers back into memory
+    vst1q_f32(result_arr, vec_result);
+    
+    std::cout << "Result of NEON vector addition: ";
+    for (int i = 0; i < 4; ++i) {
+        std::cout << result_arr[i] << " ";
+        }
+    std::cout << std::endl;
+    
+    std::cout << "First element of vec_result: " << vgetq_lane_f32(vec_result, 0) << std::endl;
+    
+    //SIMD Neon vector operation with benchmarking with scalar operation
+    int vector_size = 1000000;
+    
+    std::vector<float> a(vector_size);
+    std::vector<float> b(vector_size);
+    std::vector<float> result_scalar(vector_size);
+    std::vector<float> result_neon(vector_size);
+    
+    //initializing vectors
+    std::iota(a.begin(), a.end(), 1.0f);
+    std::iota(b.begin(), b.end(), 10.0f);
+    
+    std::cout << "\nBenchmarking vector addition for " << vector_size << " elements...\n";
+    
+    //scalar vector addition
+    auto start_scalar = std::chrono::high_resolution_clock::now();
+    vector_add_scalar(a.data(), b.data(), result_scalar.data(), vector_size);
+    auto end_scalar = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration_scalar = end_scalar - start_scalar;
+    std::cout << "Scalar vector addition time: " << duration_scalar.count() << "sec\n";
+    
+    //NEON vector additon
+    auto start_neon = std::chrono::high_resolution_clock::now();
+    vector_add_neon(a.data(), b.data(), result_neon.data(), vector_size);
+    auto end_neon = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration_neon = end_neon - start_neon;
+    std::cout << "NEON vector addition time: " << duration_neon.count() << " sec\n";
+    
+    //Verifying results for correctness
+    float max_diff_neon = 0.0f;
+    for (int i = 0; i < vector_size; ++i){
+        float diff = std::abs(result_scalar[i] - result_neon[i]);
+        if (diff>max_diff_neon){
+            max_diff_neon = diff;
+        }
+    }
+    
+    std::cout << "\nBenchmarking " << size << "x" << size << " Matrix Multiplication...\n";
+    
+    auto start_neon2 = std::chrono::high_resolution_clock::now();
+    Matrix result_neon2 = multiply_neon(LargeA, LargeB);
+    auto end_neon2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration_neon2 = end_neon2 - start_neon2;
+    std::cout << "NEON multiplication time: " << duration_neon2.count() << " seconds\n";
+    
+    //verifying neon result against manual and accelerate
+    float max_diff_neon2 = 0.0f;
+    for (int i = 0; i < size*size; ++i){
+        float diff = std::abs(result_manual.data[i] - result_neon2.data[i]);
+        if (diff>max_diff){
+            max_diff_neon2 = diff;
+        }
+    }
+    std::cout << "Max difference between manual and NEON results: " << max_diff_neon2 << std::endl;
     
     return 0;
 }

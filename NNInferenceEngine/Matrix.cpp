@@ -97,3 +97,45 @@ Matrix multiply_accelerate(const Matrix& A, const Matrix& B){
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, A.rows, B.cols, A.cols, 1.0f, A.data.data(), A.cols, B.data.data(), B.cols, 0.0f, C.data.data(), C.cols);
     return C;
 }
+
+Matrix multiply_neon(const Matrix& A, const Matrix& B){
+    if (A.cols != B.rows) {
+            throw std::invalid_argument("Matrix A columns must match Matrix B rows for multiplication.");
+        }
+    Matrix C(A.rows, B.cols);
+    
+    for (int i = 0; i < A.rows; ++i){
+        for (int j = 0; j < B.cols; ++j){
+            float32x4_t sum_vec = vdupq_n_f32(0.0f);
+            
+            int k = 0;
+            //processing in blocks of 4
+            for (; k + 3 < A.cols; k += 4){
+                //loading 4 contigous elements from A current row
+                float32x4_t a_seg = vld1q_f32(&A.data[i * A.cols + k]);
+                
+                float b_elements[4];
+                b_elements[0] = B.data[k * B.cols + j];
+                b_elements[1] = B.data[(k + 1) * B.cols + j];
+                b_elements[2] = B.data[(k + 2) * B.cols + j];
+                b_elements[3] = B.data[(k + 3) * B.cols + j];
+                float32x4_t b_seg = vld1q_f32(b_elements);
+                
+                // Multiply and accumulate
+                sum_vec = vmlaq_f32(sum_vec, a_seg, b_seg);
+            }
+            // Sum the elements in the accumulation vector
+            float element_c_ij = vgetq_lane_f32(sum_vec, 0) +
+                                 vgetq_lane_f32(sum_vec, 1) +
+                                 vgetq_lane_f32(sum_vec, 2) +
+                                 vgetq_lane_f32(sum_vec, 3);
+            // Handle remaining elements (tail processing for k)
+            for (; k < A.cols; ++k) {
+                    element_c_ij += A.data[i * A.cols + k] * B.data[k * B.cols + j];
+                        }
+
+            C.set_value(i, j, element_c_ij);
+        }
+    }
+    return C;
+}

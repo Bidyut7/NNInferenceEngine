@@ -38,5 +38,6 @@ Matrix add(const Matrix& A, const Matrix& B);
 Matrix subtract(const Matrix& A, const Matrix& B);
 Matrix multiply(const Matrix& A, const Matrix& B);
 Matrix multiply_accelerate(const Matrix& A, const Matrix& b);
+Matrix multiply_neon(const Matrix& A, const Matrix& B);
 
 #endif /* Matrix_hpp */
