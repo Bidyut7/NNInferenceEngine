@@ -11,9 +11,11 @@
 #include <arm_neon.h>  //including neon intrinsic architechture
 #include <numeric>
 #include "VectorOps.h"
+#include "Convolution.hpp"
 
 
 int main(){
+    
     std::cout << "Matrix Multiplication";
     
     //testing basic matrix creation and access
@@ -186,11 +188,56 @@ int main(){
     float max_diff_neon2 = 0.0f;
     for (int i = 0; i < size*size; ++i){
         float diff = std::abs(result_manual.data[i] - result_neon2.data[i]);
-        if (diff>max_diff){
+        if (diff>max_diff_neon2){
             max_diff_neon2 = diff;
         }
     }
     std::cout << "Max difference between manual and NEON results: " << max_diff_neon2 << std::endl;
     
+    //Benchmarking covolutions
+    int input_size = 256;
+    int kernel_size = 5;
+    
+    Matrix input_image(input_size, input_size);
+    Matrix convolution_kernel(kernel_size, kernel_size);
+    
+    // Populating input and kernel with some values
+    for (int i = 0; i < input_size; ++i) {
+        for (int j = 0; j < input_size; ++j) {
+            input_image.set_value(i, j, static_cast<float>(i * j % 255)); // Simple pattern
+        }
+    }
+    for (int i = 0; i < kernel_size; ++i) {
+        for (int j = 0; j < kernel_size; ++j) {
+            convolution_kernel.set_value(i, j, static_cast<float>(i + j + 1));
+        }
+    }
+    
+    std::cout << "\nBenchmarking " << input_size << "x" << input_size << " Convolution with " << kernel_size << "x" << kernel_size << " kernel...\n";
+    
+    //scalar convolutions
+    auto start_conv_scalar = std::chrono::high_resolution_clock::now();
+    Matrix output_conv_scalar = convolve_scalar(input_image, convolution_kernel);
+    auto end_conv_scalar = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration_conv_scalar = end_conv_scalar - start_conv_scalar;
+    std::cout << "Scalar convolution time: " << duration_conv_scalar.count() << " seconds\n";
+    
+    // NEON Convolution
+    auto start_conv_neon = std::chrono::high_resolution_clock::now();
+    Matrix output_conv_neon = convolve_neon(input_image, convolution_kernel);
+    auto end_conv_neon = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration_conv_neon = end_conv_neon - start_conv_neon;
+    std::cout << "NEON convolution time: " << duration_conv_neon.count() << " seconds\n";
+    
+    // Verify results
+    float max_diff_conv = 0.0f;
+    for (int i = 0; i < output_conv_scalar.rows * output_conv_scalar.cols; ++i) {
+        float diff = std::abs(output_conv_scalar.data[i] - output_conv_neon.data[i]);
+        if (diff > max_diff_conv) {
+            max_diff_conv = diff;
+        }
+    }
+    std::cout << "Max difference between scalar and NEON convolution results: " << max_diff_conv << std::endl;
+
     return 0;
 }
