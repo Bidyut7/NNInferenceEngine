@@ -32,7 +32,10 @@
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
 			buildPhase = 4075435D2DF81629002013E9 /* Sources */;
 			membershipExceptions = (
+				ActivationLayer.hpp,
 				Convolution.hpp,
+				DenseLayer.hpp,
+				Layer.hpp,
 				Matrix.hpp,
 				VectorOps.h,
 			);
