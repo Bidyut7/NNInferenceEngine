@@ -11,6 +11,9 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include "ActivationLayer.hpp"
+#include "DenseLayer.hpp"
+#include "Layer.hpp"
 
 void NeuralNetwork::add_layer(std::unique_ptr<Layer> layer){
     layers.push_back(std::move(layer)); //using std::move to transfer ownership
@@ -19,7 +22,7 @@ void NeuralNetwork::add_layer(std::unique_ptr<Layer> layer){
 Matrix NeuralNetwork::predict(const Matrix& input){
     Matrix current_output = input;
     
-    for (const autor& layer : layers){
+    for (const auto& layer : layers){
         current_output = layer -> forward(current_output); //passing through each layer
     }
     return current_output;
@@ -27,8 +30,8 @@ Matrix NeuralNetwork::predict(const Matrix& input){
 
 Matrix NeuralNetwork::load_matrix_from_csv(const std::string& file_path, int expected_rows, int expected_cols){
     std::ifstream file(file_path);
-    if (!file.is_open(){
-        throw std::runtime_error("Could not open CSV: " + file_path)
+    if (!file.is_open()){
+        throw std::runtime_error("Could not open CSV: " + file_path);
     }
         std::vector<float> data_values;
         std::string line;

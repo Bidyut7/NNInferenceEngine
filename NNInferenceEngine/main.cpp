@@ -12,6 +12,11 @@
 #include <numeric>
 #include "VectorOps.h"
 #include "Convolution.hpp"
+#include "Layer.hpp"
+#include "DenseLayer.hpp"
+#include "ActivationLayer.hpp"
+#include "NeuralNetwork.hpp"
+
 
 
 int main(){
@@ -238,6 +243,32 @@ int main(){
         }
     }
     std::cout << "Max difference between scalar and NEON convolution results: " << max_diff_conv << std::endl;
+    
+
+        NeuralNetwork nn;
+
+        
+        std::string model_folder_path = "models"; // Assuming 'models' folder is in the same directory as the executable
+
+        try {
+            nn.load_model_from_csv(model_folder_path);
+
+            Matrix input_data(1, 2);
+            input_data.set_value(0, 0, 0.5f);
+            input_data.set_value(0, 1, 0.8f);
+
+            std::cout << "\nInput to Neural Network:\n";
+            input_data.print();
+
+            Matrix output = nn.predict(input_data);
+
+            std::cout << "\nOutput from Neural Network:\n";
+            output.print();
+
+        } catch (const std::exception& e) {
+            std::cerr << "An error occurred during neural network test: " << e.what() << std::endl;
+        }
+
 
     return 0;
 }

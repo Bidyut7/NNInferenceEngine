@@ -15,12 +15,12 @@
 #include <fstream>
 #include <sstream>
 #include "Layer.hpp"
-#include "DesnseLayer.hpp"
+#include "DenseLayer.hpp"
 #include "Matrix.hpp"
 
 class NeuralNetwork {
 public:
-    std::vector<std::unique_ptr<Layer> layers; //storing layers using smart pointers
+    std::vector<std::unique_ptr<Layer>> layers; //storing layers using smart pointers
     
     NeuralNetwork() = default;
     
@@ -31,7 +31,7 @@ public:
     void load_model_from_csv(const std::string& folder_path);
     
 private:
-    Matrix load_model_from_csv(const std::string& file_path, int expected_rows, int expected_cols);
+    Matrix load_matrix_from_csv(const std::string& file_path, int expected_rows, int expected_cols);
 };
 
 #endif /* NeuralNetwork_hpp */

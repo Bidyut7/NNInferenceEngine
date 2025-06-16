@@ -33,6 +33,7 @@ Matrix ActivationLayer::forward(const Matrix& input){
                     break;
                 case ActivationType::Sigmoid:
                     activated_val = sigmoid(val);
+                    break;
                 default:
                     throw std::runtime_error("Unknown activation type.");
             }

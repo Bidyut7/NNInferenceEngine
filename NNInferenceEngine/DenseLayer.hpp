@@ -15,7 +15,7 @@
 class DenseLayer: public Layer{
 public:
     Matrix weights;
-    Matrix baises;
+    Matrix biases;
     
     DenseLayer(int num_inputs, int num_outputs);
     
