@@ -37,6 +37,7 @@
 				DenseLayer.hpp,
 				Layer.hpp,
 				Matrix.hpp,
+				NeuralNetwork.hpp,
 				VectorOps.h,
 			);
 		};

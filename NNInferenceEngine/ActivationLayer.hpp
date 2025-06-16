@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 #include "Layer.hpp"
-#incude <functional>
+#include <functional>
 
 //defining enums to specify activation function type
 enum class ActivationType{
