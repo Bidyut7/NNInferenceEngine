@@ -16,6 +16,7 @@
 #include "DenseLayer.hpp"
 #include "ActivationLayer.hpp"
 #include "NeuralNetwork.hpp"
+#include "InferencePipeline.hpp"
 
 
 
@@ -268,7 +269,40 @@ int main(){
         } catch (const std::exception& e) {
             std::cerr << "An error occurred during neural network test: " << e.what() << std::endl;
         }
+    
+    InferencePipeline pipeline;
+    
+    //std::string model_folder_path = 'models';
+    
+    try{
+        pipeline.load_model(model_folder_path);
+        
+        // Example input for the network (1 sample, 2 features)
+        Matrix input_data(1, 2);
+        input_data.set_value(0, 0, 0.5f);
+        input_data.set_value(0, 1, 0.8f);
+        
+        std::cout<<"Input to inference pipeline:\n";
+        input_data.print();
+        
+        Matrix output = pipeline.run_inference(input_data);
+        
+        std::cout<<"\nOutput from inference pipeline\n";
+        output.print();
+        
+        float expected_output = 0.788515f;
+        float actual_output = output.get_value(0,0);
+        float diff = std::abs(expected_output - actual_output);
+        std::cout << "Difference from expected output (" << expected_output << "): " << diff << std::endl;
+        if (diff < 1e-5) { 
+            std::cout << "Inference pipeline output matches expected output within tolerance.\n";
+            } else {
+                std::cout << "WARNING: Inference pipeline output deviates from expected output!\n";
+            }
 
+    }catch (const std::exception& e) {
+        std::cerr << "An error occurred during inference pipeline test: " << e.what() << std::endl;
+    }
 
     return 0;
 }

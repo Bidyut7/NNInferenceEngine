@@ -35,6 +35,7 @@
 				ActivationLayer.hpp,
 				Convolution.hpp,
 				DenseLayer.hpp,
+				InferencePipeline.hpp,
 				Layer.hpp,
 				Matrix.hpp,
 				NeuralNetwork.hpp,
