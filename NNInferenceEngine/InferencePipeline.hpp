@@ -23,10 +23,10 @@ public:
     void load_model(const std::string& model_folder_path);
     
     //running inference on a given input and returing a output
-    Matrix run_inference(const Matrix& input);
+    Matrix run_inference(const Matrix& input, bool print_layer_timings = false);
     
     Matrix preprocess_input(const Matrix& raw_input);
     Matrix postprocess_output(const Matrix& raw_output);
 };
 
-#endif /* InferencePipeline_hpp */
+#endif 

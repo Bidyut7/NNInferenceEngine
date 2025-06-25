@@ -11,6 +11,7 @@
 #include <stdexcept> //for throwing exceptions
 #include <Accelerate/Accelerate.h>
 #include <arm_neon.h>
+#include "QuantizedTensor.h"
 
 
 //Constructor Implementation
@@ -149,7 +150,7 @@ Matrix multiply_neon(const Matrix& A, const Matrix& B) {
                 c_out_vec = vmlaq_n_f32(c_out_vec, b_vals, a_val);
             }
 
-            // Store the computed 4 output elements C[i][j...j+3] to the result matrix
+            // Storing the computed 4 output elements C[i][j...j+3] to the result matrix
             vst1q_f32(&C.data[i * C.cols + j], c_out_vec);
         } // End for j (B.cols) loop (vectorized part)
 
@@ -160,6 +161,90 @@ Matrix multiply_neon(const Matrix& A, const Matrix& B) {
                 sum += A.data[i * A.cols + k] * B.data[k * B.cols + j];
             }
             C.set_value(i, j, sum);
+        }
+    }
+    return C;
+}
+
+void Matrix::get_min_max(float& min_val, float& max_val) const{
+    if (data.empty()){
+        min_val = 0.0f;
+        max_val = 0.0f;
+        return;
+    }
+    min_val = data[0];
+    max_val = data[0];
+    for (float val : data){
+        if (val < min_val) min_val = val;
+        if (val > max_val) max_val = val;
+    }
+}
+
+
+QuantizedAccumulatorTensor multiply_quantized(const QuantizedTensor& A, const QuantizedTensor& B){
+    if (A.cols != B.rows){
+        throw std::invalid_argument("Quantized Matrix A columns must match Quantized Matrix B rows for multiplication.");
+    }
+    
+    QuantizedAccumulatorTensor C(A.rows, B.cols);
+    
+    for (int i = 0; i < A.rows; ++i){
+        int j = 0;
+        for (; j + 3 < B.cols; j+=4){
+            int32x4_t c_out_vec_acc = vdupq_n_s32(0);
+            
+            // Inner loop over K dimension (columns of A / rows of B)
+            // Process 4 elements of K at a time for NEON multiply-accumulate
+            int k = 0;
+            for (; k + 3 < A.cols; k+=4){
+                // Load 4 int8_t elements from A's current row (contiguous)
+                // This uses vld1_s8 which loads to a 64-bit vector,
+                // then convert to 128-bit int16 or int32 for multiplication
+                int8x8_t a_seg_s8 = vld1_s8(&A.data[i * A.cols + k]);
+                int16x8_t a_seg_s16 = vmovl_s8(a_seg_s8);
+                int32x4_t a_seg_32_low = vmovl_s16(vget_low_s16(a_seg_s16));
+                int32x4_t a_seg_s32_high = vmovl_s16(vget_high_s16(a_seg_s16));
+                
+                // Load 4x4 block from B (rows are contiguous)
+                // B[k][j], B[k][j+1], B[k][j+2], B[k][j+3]
+                int8x8_t b_row0_s8 = vld1_s8(&B.data[k * B.cols + j]);
+                int8x8_t b_row1_s8 = vld1_s8(&B.data[(k + 1) * B.cols + j]);
+                int8x8_t b_row2_s8 = vld1_s8(&B.data[(k + 2) * B.cols + j]);
+                int8x8_t b_row3_s8 = vld1_s8(&B.data[(k + 3) * B.cols + j]);
+                
+                int16x8_t b_row0_s16 = vmovl_s8(b_row0_s8);
+                int16x8_t b_row1_s16 = vmovl_s8(b_row1_s8);
+                int16x8_t b_row2_s16 = vmovl_s8(b_row2_s8);
+                int16x8_t b_row3_s16 = vmovl_s8(b_row3_s8);
+                
+                int32x4_t b_row0_s32 = vmovl_s16(vget_low_s16(b_row0_s16));
+                int32x4_t b_row1_s32 = vmovl_s16(vget_low_s16(b_row1_s16));
+                int32x4_t b_row2_s32 = vmovl_s16(vget_low_s16(b_row2_s16));
+                int32x4_t b_row3_s32 = vmovl_s16(vget_low_s16(b_row3_s16));
+                
+                for (int inner_k = 0; inner_k < A.cols; ++inner_k) {
+                    int32_t a_val = A.data[i * A.cols + inner_k]; // Load single int8 from A, treated as int32
+                    int32x4_t a_broadcast = vdupq_n_s32(a_val); // Broadcast it to a vector
+
+                    // Load 4 int8_t from B's current row
+                    int8x8_t b_row_seg_s8 = vld1_s8(&B.data[inner_k * B.cols + j]);
+                    int32x4_t b_row_seg_s32 = vmovl_s16(vget_low_s16(vmovl_s8(b_row_seg_s8))); // Promote  to int32
+
+                    // Multiply and accumulate (int32 * int32 -> int32)
+                    // This is essentially (A_ik * B_kj), (A_ik * B_k_j+1), etc.
+                    c_out_vec_acc = vmlaq_s32(c_out_vec_acc, b_row_seg_s32, a_broadcast);
+                }
+
+            }
+            
+            vst1q_s32(&C.data[i * C.cols + j], c_out_vec_acc);
+        }
+        for (; j < B.cols; ++j) {
+            int32_t sum = 0;
+            for (int k = 0; k < A.cols; ++k) {
+                sum += static_cast<int32_t>(A.data[i * A.cols + k]) * static_cast<int32_t>(B.data[k * B.cols + j]);
+            }
+            C.data[i * C.cols + j] = sum;
         }
     }
     return C;

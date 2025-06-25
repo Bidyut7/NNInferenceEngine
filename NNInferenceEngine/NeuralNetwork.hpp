@@ -26,12 +26,11 @@ public:
     
     void add_layer(std::unique_ptr<Layer> layer);
     
-    Matrix predict(const Matrix& input);
+    Matrix predict(const Matrix& input, bool print_layer_timings = false);
     
     void load_model_from_csv(const std::string& folder_path);
     
-private:
-    Matrix load_matrix_from_csv(const std::string& file_path, int expected_rows, int expected_cols);
+    static Matrix load_matrix_from_csv(const std::string& file_path, int expected_rows, int expected_cols);
 };
 
-#endif /* NeuralNetwork_hpp */
+#endif 

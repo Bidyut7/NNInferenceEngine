@@ -16,4 +16,4 @@ void vector_add_scalar(const float* a, const float* b, float* result, int length
 void vector_add_neon(const float* a, const float* b, float* result, int length);
 
 
-#endif /* VectorOps_h */
+#endif 

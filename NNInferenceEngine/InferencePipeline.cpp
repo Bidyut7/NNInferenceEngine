@@ -23,7 +23,7 @@ void InferencePipeline::load_model(const std::string& model_folder_path){
     
 }
 
-Matrix InferencePipeline::run_inference(const Matrix& input){
+Matrix InferencePipeline::run_inference(const Matrix& input, bool print_layer_timings){
     if (!network){
         throw std::runtime_error("Neural network not initialised in pipeline");
     }

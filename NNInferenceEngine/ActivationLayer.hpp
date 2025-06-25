@@ -34,4 +34,4 @@ private:
     static float sigmoid(float x);
 };
 
-#endif /* ActivationLayer_hpp */
+#endif 

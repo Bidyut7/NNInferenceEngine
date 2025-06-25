@@ -15,4 +15,4 @@
 Matrix convolve_scalar(const Matrix& input, const Matrix& kernel);
 Matrix convolve_neon(const Matrix& input, const Matrix& kernel);
 
-#endif /* Convolution_hpp */
+#endif 

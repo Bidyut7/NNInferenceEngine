@@ -12,6 +12,7 @@
 #include <vector>
 #include <iostream>
 #include <Accelerate/Accelerate.h> // for cblas_sgemm
+#include "QuantizedTensor.h"
 
 class Matrix{
 public:
@@ -32,6 +33,16 @@ public:
     
     //Method to print the matrix(for debugging)
     void print() const;
+    
+    void get_min_max(float& min_val, float& max_val) const;
+    
+    struct QuantizedTensor;
+    struct QuantizedAccumulatorTensor;
+    
+    //function for int8 multiplication
+    QuantizedAccumulatorTensor multiply_quantized(const QuantizedTensor& A, const QuantizedTensor& B);
+
+    
 };
 
 Matrix add(const Matrix& A, const Matrix& B);
@@ -39,5 +50,6 @@ Matrix subtract(const Matrix& A, const Matrix& B);
 Matrix multiply(const Matrix& A, const Matrix& B);
 Matrix multiply_accelerate(const Matrix& A, const Matrix& b);
 Matrix multiply_neon(const Matrix& A, const Matrix& B);
+
 
 #endif /* Matrix_hpp */

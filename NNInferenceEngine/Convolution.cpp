@@ -24,9 +24,6 @@ Matrix convolve_scalar(const Matrix& input, const Matrix& kernel){
     
     Matrix output(output_rows, output_cols);
     
-    int kernel_centre_rows = kernel.rows / 2;
-    int kernel_centre_cols = kernel.cols / 2;
-    
     for (int i = 0; i < output_rows; ++i){ //input rows
         for (int j = 0; j < output_cols; ++j){ //output cols
             float sum = 0.0f;
